@@ -1,17 +1,16 @@
 locals {
-  environments = {
-    test       = var.test
-    staging    = var.staging
-    production = var.production
-  }
-
   service_buses = flatten([
-    for environment_name, config in local.environments : [
-      for service_bus_name, service_bus_config in config : {
-        name         = "${service_bus_name}-${environment_name}"
-        cost_centre  = service_bus_config.cost_centre
-        product_name = service_bus_config.product_name
-        queues       = service_bus_config.queues
+    for environment in tolist([var.test, var.staging, var.production]) : [
+      for service_bus_name, service_bus in environment.service_buses : {
+        environment          = environment.name
+        resource_group_name  = "rg-${service_bus_name}-${environment.name}"
+        management_lock_name = "ml-${service_bus_name}-${environment.name}"
+        namespace            = "sbns-${service_bus_name}-${environment.name}"
+        tags = {
+          cost_centre  = service_bus.cost_centre
+          product_name = service_bus.product_name
+        }
+        queues = service_bus.queues
       }
     ]
   ])
@@ -19,8 +18,8 @@ locals {
   queues = flatten([
     for index, service_bus in local.service_buses : [
       for queue in service_bus.queues : {
-        service_bus_index = index
-        name              = queue
+        sb_index = index
+        name              = "sbq-${queue}-${service_bus.environment}"
       }
     ]
   ])
@@ -30,34 +29,30 @@ resource "azurerm_resource_group" "rg" {
   count = length(local.service_buses)
 
   location = "West Europe"
-  name     = "rg-${local.service_buses[count.index].name}"
+  name     = local.service_buses[count.index].resource_group_name
 }
 
 resource "azurerm_management_lock" "rg_lock" {
   count = length(local.service_buses)
 
   lock_level = "CanNotDelete"
-  name       = "ml-${local.service_buses[count.index].name}"
+  name       = local.service_buses[count.index].management_lock_name
   scope      = azurerm_resource_group.rg[count.index].id
 }
 
 resource "azurerm_servicebus_namespace" "sbn" {
   count = length(local.service_buses)
 
-  name                = "sb-${local.service_buses[count.index].name}"
+  name                = local.service_buses[count.index].namespace
   location            = azurerm_resource_group.rg[count.index].location
   resource_group_name = azurerm_resource_group.rg[count.index].name
   sku                 = "Standard"
-
-  tags = {
-    cost_centre  = local.service_buses[count.index].cost_centre
-    product_name = local.service_buses[count.index].product_name
-  }
+  tags                = local.service_buses[count.index].tags
 }
 
 resource "azurerm_servicebus_queue" "queue" {
   count = length(local.queues)
 
   name         = local.queues[count.index].name
-  namespace_id = azurerm_servicebus_namespace.sbn[local.queues[count.index].service_bus_index].id
+  namespace_id = azurerm_servicebus_namespace.sbn[local.queues[count.index].sb_index].id
 }

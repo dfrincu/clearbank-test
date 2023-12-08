@@ -33,7 +33,7 @@ type = map(object({
 
 ## Testing
 
-As of version `1.6.0` Terraform provides a testing framework.
+As of version `1.6.0` Terraform provides a testing framework. Please refer to [tests_1.tftest.hcl](./tests_1.tftest.hcl) for sample tests. To execute the test, run `terraform test` in the `technical-test-terraform` folder.
 
 ## Deployment
 - GitHub Actions option running the scripts with an AWS S3/Azure Blob Storage backend for maintaining state files.
