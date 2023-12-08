@@ -26,31 +26,30 @@ locals {
   ])
 }
 
-resource "azurerm_resource_group" "asbn_rg" {
+resource "azurerm_resource_group" "rg" {
   count = length(local.service_buses)
 
   location = "West Europe"
   name     = "rg-${local.service_buses[count.index].name}"
 }
 
-resource "azurerm_management_lock" "lock" {
+resource "azurerm_management_lock" "rg_lock" {
   count = length(local.service_buses)
 
   lock_level = "CanNotDelete"
   name       = "ml-${local.service_buses[count.index].name}"
-  scope      = azurerm_resource_group.asbn_rg[count.index].id
+  scope      = azurerm_resource_group.rg[count.index].id
 }
 
-resource "azurerm_servicebus_namespace" "asbn" {
+resource "azurerm_servicebus_namespace" "sbn" {
   count = length(local.service_buses)
 
   name                = "sb-${local.service_buses[count.index].name}"
-  location            = azurerm_resource_group.asbn_rg[count.index].location
-  resource_group_name = azurerm_resource_group.asbn_rg[count.index].name
+  location            = azurerm_resource_group.rg[count.index].location
+  resource_group_name = azurerm_resource_group.rg[count.index].name
   sku                 = "Standard"
 
   tags = {
-    source       = "terraform",
     cost_centre  = local.service_buses[count.index].cost_centre
     product_name = local.service_buses[count.index].product_name
   }
@@ -60,5 +59,5 @@ resource "azurerm_servicebus_queue" "queue" {
   count = length(local.queues)
 
   name         = local.queues[count.index].name
-  namespace_id = azurerm_servicebus_namespace.asbn[local.queues[count.index].service_bus_index].id
+  namespace_id = azurerm_servicebus_namespace.sbn[local.queues[count.index].service_bus_index].id
 }

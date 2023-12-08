@@ -35,4 +35,9 @@ production = {
     product_name = "pn-2"
     queues = ["a-queue", "another-queue"]
   }
+  namespace-3 = {
+    cost_centre = "cc-1"
+    product_name = "pn-3"
+    queues = ["a-queue", "another-queue", "yet-another-queue"]
+  }
 }

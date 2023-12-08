@@ -32,7 +32,7 @@ type = map(object({
 ```
 
 ## Testing
+As of version `1.6.0` Terraform provides a testing framework
 
 ## Deployment
-- GitHub Actions option running the scripts with an AWS S3/Azure Blob Storage backend for maintaining state files. 
-- Azure DevOps pipeline
+- GitHub Actions option running the scripts with an AWS S3/Azure Blob Storage backend for maintaining state files.
